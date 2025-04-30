@@ -28,6 +28,27 @@ poetry add sentence-transformers transformers torch
 poetry add tiktoken
 
 
-If you ever need to generate one for compatibility with tools that require requirements.txt (like Docker images or CI workflows), you can always do:
+# If you ever need to generate requirements for compatibility with tools that require requirements.txt (like Docker images or CI workflows)
 # poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+
+# add notes/ directory and implement chunking
+poetry run python scripts/parse_notes.py
+
+poetry add python-frontmatter
+
+
+# add
+poetry add sentence-transformers chromadb
+poetry run python scripts/embed_notes.py
+
+# means that Chroma’s REST API client is not yet supported in the version of the chromadb Python library you're using — it only supports local (in-process) clients, not remote servers like the one running in your Podman container.
+
+poetry add "chromadb[rest]" sentence-transformers
+
+poetry run python scripts/embed_notes.py
+
+# In short: Chroma does not allow lists as metadata values.
+# Your tags field is a list (["demo", "test", "vault-rummager"]), but Chroma only accepts flat types like:
+
 
