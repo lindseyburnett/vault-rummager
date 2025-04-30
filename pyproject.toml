@@ -10,6 +10,7 @@ python = "^3.10"
 sentence-transformers = "^4.1.0"
 transformers = "^4.51.3"
 torch = "^2.7.0"
+python-frontmatter = "^1.1.0"
 
 
 [build-system]
