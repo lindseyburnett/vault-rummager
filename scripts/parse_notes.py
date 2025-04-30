@@ -1,12 +1,16 @@
-# scripts/parse_notes.py
 import os
 import re
 import frontmatter
 from pathlib import Path
 from typing import List, Dict
 import nltk
-nltk.download("punkt")
+from dotenv import load_dotenv
+from datetime import datetime
+import shlex
+import hashlib
 from nltk.tokenize import sent_tokenize
+
+load_dotenv()
 
 def clean_markdown_note(path: Path) -> Dict:
     post = frontmatter.load(path)
@@ -35,13 +39,13 @@ def clean_markdown_note(path: Path) -> Dict:
         "source": str(path)
     }
 
-def chunk_text(text: str, title: str, max_chars: int = 2000) -> List[str]:
+def chunk_text(text: str, title: str, max_chars: int = 750) -> List[str]:
     sentences = sent_tokenize(text)
     chunks = []
     current_chunk = ""
 
     for sent in sentences:
-        if len(current_chunk) + len(sent) <= max_chars:
+        if len(current_chunk) + len(sent) < max_chars:
             current_chunk += sent + " "
         else:
             chunks.append(f"{title}\n\n{current_chunk.strip()}")
@@ -52,21 +56,41 @@ def chunk_text(text: str, title: str, max_chars: int = 2000) -> List[str]:
 
     return chunks
 
-def parse_vault(vault_dir: str = "notes") -> List[Dict]:
-    vault_path = Path(vault_dir)
+
+def make_chunk_id(path: Path, chunk_text: str) -> str:
+    full_hash = hashlib.md5((str(path.resolve()) + chunk_text).encode()).hexdigest()
+    return f"{full_hash}"
+
+def parse_vault(vault_dirs: str = None) -> List[Dict]:
     all_chunks = []
+    paths = [Path(p) for p in vault_dirs]
 
-    for md_file in vault_path.rglob("*.md"):
-        cleaned = clean_markdown_note(md_file)
-        chunks = chunk_text(cleaned["content"], cleaned["title"])
+    print("📁 Parsed paths:", paths)
+    seen_files = set()
 
-        for i, chunk in enumerate(chunks):
-            all_chunks.append({
-                "chunk": chunk,
-                "title": cleaned["title"],
-                "tags": cleaned["tags"],
-                "source": cleaned["source"],
-                "chunk_id": f"{md_file.stem}_{i}"
-            })
+    for base_path in paths:
+        for vault_path in base_path.rglob("*.md"):
+            resolved = vault_path.resolve()
+            if resolved in seen_files:
+                print(f"⚠️ Skipping duplicate file: {resolved}")
+                continue
+            seen_files.add(resolved)
+            
+            cleaned = clean_markdown_note(vault_path)
+            chunks = chunk_text(cleaned["content"], cleaned["title"])
+            
+            for i, chunk in enumerate(chunks):
+                chunk_id = make_chunk_id(resolved, chunk)
+                all_chunks.append({
+                    "chunk": chunk,
+                    "title": cleaned["title"],
+                    "tags": cleaned["tags"],
+                    "source": str(vault_path),
+                    "chunk_id": chunk_id
+                })
 
     return all_chunks
+
+# NOTE: current date helper for prompt injection (if used externally)
+def current_date_string():
+    return datetime.today().strftime("%B %d, %Y")

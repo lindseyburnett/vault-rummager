@@ -89,6 +89,9 @@ poetry run python scripts/query.py "What do my notes say about when Taylor Swift
 # improve chunking logic
 poetry add nltk
 
+poetry run python -c "import nltk; nltk.download('punkt_tab')"
+
+
 
 # make CLI loop
 poetry run python scripts/query.py
@@ -97,3 +100,37 @@ touch scripts/chat.py
 poetry run python scripts/chat.py
 
 # Mitigate hedging hallucination by updating chat prompt
+
+
+poetry add rich
+poetry run python scripts/chat.py
+
+# fallback that lets the model respond even when Chroma finds no match
+
+
+# chat doesn't promt for another question after an answer
+
+
+ podman exec -it ollama bash
+ollama pull gemma:2b
+
+
+podman-compose down
+podman-compose up -d
+
+curl http://localhost:11434/api/pull -d '{"name": "mistral"}'
+curl http://localhost:11434/api/pull -d '{"name": "gemma:2b"}'
+
+curl http://localhost:11434/api/generate -d '{
+  "model": "gemma:2b",
+  "prompt": "Summarize what a personal knowledge base is.",
+  "stream": false
+}'
+
+
+
+
+curl -fsSL https://ollama.com/install.sh | sh
+
+
+poetry run python scripts/reindex.py --reset

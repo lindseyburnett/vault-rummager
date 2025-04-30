@@ -5,7 +5,6 @@ from parse_notes import parse_vault
 
 
 def hash_chunk(chunk: str) -> str:
-    """Create a unique hash for each chunk to use as an ID in Chroma."""
     return hashlib.md5(chunk.encode("utf-8")).hexdigest()
 
 
@@ -20,7 +19,10 @@ def embed_and_store(chunks, collection_name="vault-rummager", reset=False):
 
     if reset:
         print(f"🧨 Resetting collection: {collection_name}")
-        client.delete_collection(name=collection_name)
+        try:
+            client.delete_collection(name=collection_name)
+        except Exception:
+            pass
 
     collection = client.get_or_create_collection(name=collection_name)
     print(f"📚 Using Chroma collection: {collection_name}")
@@ -28,18 +30,17 @@ def embed_and_store(chunks, collection_name="vault-rummager", reset=False):
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
     print(f"📦 Processing {len(chunks)} chunks...")
+    existing_ids = set(collection.get()["ids"])
+
     all_texts, all_ids, all_metadata = [], [], []
     new_count = 0
 
-    # Get existing IDs to avoid re-embedding
-    existing_ids = set(collection.get()["ids"])
-
     for c in chunks:
         chunk_text = c["chunk"]
-        chunk_id = hashlib.md5(chunk_text.encode("utf-8")).hexdigest()
+        chunk_id = c.get("chunk_id") or hash_chunk(chunk_text)
 
         if chunk_id in existing_ids:
-            continue  # skip if already indexed
+            continue
 
         all_texts.append(chunk_text)
         all_ids.append(chunk_id)
@@ -47,7 +48,7 @@ def embed_and_store(chunks, collection_name="vault-rummager", reset=False):
             "title": c["title"],
             "tags": ", ".join(c["tags"]) if isinstance(c["tags"], list) else c["tags"],
             "source": c["source"],
-            "chunk_id": c["chunk_id"]
+            "chunk_id": chunk_id,
         })
         new_count += 1
 
@@ -59,13 +60,11 @@ def embed_and_store(chunks, collection_name="vault-rummager", reset=False):
     embeddings = model.encode(all_texts, show_progress_bar=True)
 
     print("📥 Storing new embeddings in Chroma...")
-    collection.add(documents=all_texts, embeddings=embeddings.tolist(), ids=all_ids, metadatas=all_metadata)
+    collection.add(
+        documents=all_texts,
+        embeddings=embeddings.tolist(),
+        ids=all_ids,
+        metadatas=all_metadata,
+    )
 
     print("✅ Stored new embeddings.")
-
-
-if __name__ == "__main__":
-    print("🔍 Parsing vault...")
-    vault_chunks = parse_vault("notes")
-    print(f"✅ Found {len(vault_chunks)} chunks to embed.")
-    embed_and_store(vault_chunks)
