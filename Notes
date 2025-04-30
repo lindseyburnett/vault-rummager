@@ -53,3 +53,33 @@ poetry run python scripts/embed_notes.py
 
 
 touch scripts/query.py
+
+poetry run python scripts/query.py "What do my notes say about second brains?"
+
+
+# Add new file to the notes directory
+touch notes/TSWIFT.md
+# Rerun the parsing & embedding pipelines
+poetry run python scripts/embed_notes.py
+
+# Ask more qeustions
+poetry run python scripts/query.py "What do my notes say about when Taylor Swift was born?"
+
+# Add convenience wrapper to reindex
+touch scripts/reindex.py
+poetry run python scripts/reindex.py
+# full reset and rebuild
+poetry run python scripts/reindex.py --reset
+
+# Ask more qeustions
+poetry run python scripts/query.py "What do my notes say about when Taylor Swift was born?"
+
+# 
+# ❗ Problem: The Chunk Containing the Birthdate Is Buried Deep
+# You’re probably retrieving 5 chunks from the middle or end of a giant file. Chroma has no idea that your birthdate sentence is more important than those other chunks — it’s just retrieving based on vector similarity.
+
+# So even though you embedded the birthdate correctly, it’s:
+
+# In an early chunk
+
+# And not ranked high enough to be included in the top TOP_K results

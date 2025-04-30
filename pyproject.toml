@@ -12,6 +12,7 @@ transformers = "^4.51.3"
 torch = "^2.7.0"
 python-frontmatter = "^1.1.0"
 chromadb = {extras = ["rest"], version = "^1.0.7"}
+nltk = "^3.9.1"
 
 
 [build-system]

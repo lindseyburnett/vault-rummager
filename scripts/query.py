@@ -1,25 +1,22 @@
+# scripts/query.py
 import chromadb
 from sentence_transformers import SentenceTransformer
 import requests
 import argparse
+from datetime import datetime
 
-# --- Config ---
 CHROMA_HOST = "localhost"
 CHROMA_PORT = 8000
 OLLAMA_URL = "http://localhost:11434/api/generate"
 COLLECTION_NAME = "vault-rummager"
 MODEL_NAME = "mistral"
-TOP_K = 5
-MAX_CONTEXT_CHARS = 3000
-
+TOP_K = 10
+MAX_CONTEXT_CHARS = None  # Set to None to include full context
 
 def embed_query(query: str, model) -> list:
-    """Embed the user's question."""
     return model.encode([query])[0].tolist()
 
-
 def query_chroma(embedding: list, client) -> list:
-    """Search for the most relevant chunks."""
     collection = client.get_collection(name=COLLECTION_NAME)
     results = collection.query(
         query_embeddings=[embedding],
@@ -28,10 +25,11 @@ def query_chroma(embedding: list, client) -> list:
     )
     return results
 
-
 def build_prompt(query: str, contexts: list) -> str:
-    """Construct the prompt to send to the LLM."""
-    context_str = "\n\n".join(contexts)[:MAX_CONTEXT_CHARS]
+    context_str = "\n\n".join(contexts)
+    if MAX_CONTEXT_CHARS:
+        context_str = context_str[:MAX_CONTEXT_CHARS]
+
     prompt = f"""You are a helpful assistant with access to my personal notes.
 
 Answer the following question using the context below. If the context isn't helpful, say you don't know.
@@ -48,19 +46,15 @@ Question:
 """
     return prompt
 
-
 def ask_ollama(prompt: str, model=MODEL_NAME) -> str:
-    """Send the prompt to the local Ollama model and return the response."""
     response = requests.post(
         OLLAMA_URL,
         json={"model": model, "prompt": prompt, "stream": False}
     )
-
     if response.status_code == 200:
         return response.json().get("response", "").strip()
     else:
         return f"❌ Ollama API error {response.status_code}: {response.text}"
-
 
 def main():
     parser = argparse.ArgumentParser(description="Ask a question to Vault Rummager.")
@@ -78,9 +72,15 @@ def main():
     results = query_chroma(embedded_query, chroma_client)
 
     documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+
     if not documents:
         print("❌ No relevant results found.")
         return
+
+    print(f"🔎 Top retrieved chunks:\n")
+    for doc, meta in zip(documents, metadatas):
+        print(f"From {meta['source']} (chunk {meta['chunk_id']}):\n{doc[:300]}...\n{'-'*60}")
 
     print(f"📚 Retrieved {len(documents)} relevant chunk(s).")
 
@@ -88,9 +88,21 @@ def main():
 
     print("🤖 Sending to Ollama...")
     answer = ask_ollama(prompt)
+
     print("\n💡 Answer:\n")
     print(answer)
 
+    # 📝 Log Q&A to answers.log
+    log_entry = f"""[{datetime.now().isoformat()}]
+
+Q: {args.question}
+
+A:
+{answer}
+
+{'='*80}\n"""
+    with open("answers.log", "a") as f:
+        f.write(log_entry)
 
 if __name__ == "__main__":
     main()
