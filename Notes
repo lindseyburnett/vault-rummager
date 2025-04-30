@@ -52,3 +52,4 @@ poetry run python scripts/embed_notes.py
 # Your tags field is a list (["demo", "test", "vault-rummager"]), but Chroma only accepts flat types like:
 
 
+touch scripts/query.py
