@@ -1,0 +1,33 @@
+
+
+curl http://localhost:11434/api/pull -d '{"name": "mistral"}'
+
+curl http://localhost:11434/api/generate -d '{
+  "model": "mistral",
+  "prompt": "Summarize the importance of vector databases in AI search."
+}'
+
+
+
+
+
+
+
+
+poetry init --name "vault-rummager" --description "A private, local AI chatbot that rummages through your Obsidian vault." --author "Your Name <your@email.com>" --python "^3.10"
+
+
+# Core functionality
+poetry add python-frontmatter mistune requests chromadb
+
+# For embeddings + transformers
+poetry add sentence-transformers transformers torch
+
+
+# Optional (but useful)
+poetry add tiktoken
+
+
+If you ever need to generate one for compatibility with tools that require requirements.txt (like Docker images or CI workflows), you can always do:
+# poetry export -f requirements.txt --output requirements.txt --without-hashes
+
