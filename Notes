@@ -83,3 +83,17 @@ poetry run python scripts/query.py "What do my notes say about when Taylor Swift
 # In an early chunk
 
 # And not ranked high enough to be included in the top TOP_K results
+
+
+
+# improve chunking logic
+poetry add nltk
+
+
+# make CLI loop
+poetry run python scripts/query.py
+
+touch scripts/chat.py
+poetry run python scripts/chat.py
+
+# Mitigate hedging hallucination by updating chat prompt

@@ -1,3 +1,4 @@
+# scripts/chat.py
 import chromadb
 from sentence_transformers import SentenceTransformer
 import requests
@@ -9,12 +10,10 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 COLLECTION_NAME = "vault-rummager"
 MODEL_NAME = "mistral"
 TOP_K = 10
-MAX_CONTEXT_CHARS = None  # Set to None to disable truncation
-
+MAX_CONTEXT_CHARS = None
 
 def embed_query(query: str, model) -> list:
     return model.encode([query])[0].tolist()
-
 
 def query_chroma(embedding: list, client) -> list:
     collection = client.get_collection(name=COLLECTION_NAME)
@@ -24,7 +23,6 @@ def query_chroma(embedding: list, client) -> list:
         include=["documents", "metadatas"]
     )
     return results
-
 
 def build_prompt(query: str, contexts: list) -> str:
     context_str = "\n\n".join(contexts)
@@ -45,8 +43,8 @@ Context:
 Question:
 {query}
 """
-    return prompt
 
+    return prompt
 
 def ask_ollama(prompt: str, model=MODEL_NAME) -> str:
     response = requests.post(
@@ -58,7 +56,6 @@ def ask_ollama(prompt: str, model=MODEL_NAME) -> str:
     else:
         return f"❌ Ollama API error {response.status_code}: {response.text}"
 
-
 def log_interaction(question: str, answer: str):
     log_entry = f"""[{datetime.now().isoformat()}]
 
@@ -67,11 +64,9 @@ Q: {question}
 A:
 {answer}
 
-{'='*80}
-"""
+{'='*80}\n"""
     with open("answers.log", "a") as f:
         f.write(log_entry)
-
 
 def main():
     print("💬 Vault Rummager Chat (type 'exit' to quit)\n")
@@ -104,7 +99,6 @@ def main():
         except KeyboardInterrupt:
             print("\n👋 Goodbye!")
             break
-
 
 if __name__ == "__main__":
     main()
