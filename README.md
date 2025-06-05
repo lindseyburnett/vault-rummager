@@ -51,6 +51,9 @@ podman-compose -f podman-compose.yml up -d
 - `localhost:8000` → ChromaDB
 - `localhost:11434` → Ollama REST API
 
+
+![Podman compose demo](imgs/podmancompose.gif)
+
 ---
 
 ### 4. Pull a Local LLM via Ollama
@@ -60,24 +63,10 @@ You must download a model before generating text.
 #### Using API (no CLI):
 
 ```bash
-curl http://localhost:11434/api/pull -d '{"name": "mistral"}'
+curl http://localhost:11434/api/pull -d '{"name": "gemma:2b"}'
 ```
 
-#### Or via CLI (if you have Ollama locally installed):
-
-```bash
-ollama pull mistral
-```
-
-Check installed models:
-
-```bash
-curl http://localhost:11434/api/tags
-```
-
----
-
-### 5. Project Structure (So Far)
+### 5. Project Structure
 
 ```
 vault-rummager/
@@ -87,7 +76,7 @@ vault-rummager/
 ├── .gitignore
 ├── pyproject.toml            # Poetry-managed dependencies
 ├── poetry.lock
-├── notes/                    # Place your Obsidian markdown files here
+├── notes/                    # Place your knowledge base files here
 └── scripts/                  # (coming soon) parsing, embedding, querying scripts
 ```
 
@@ -103,15 +92,18 @@ vault-rummager/
 
 ---
 
-## 🧱 Next Steps
+## Usage
+### Indexing your notes
 
-- [ ] `scripts/parse_notes.py` – clean & chunk your `.md` files
-- [ ] `scripts/embed_notes.py` – embed and index them in Chroma
-- [ ] `scripts/query.py` – answer questions by injecting results into Ollama
+```bash
+poetry run python scripts/reindex.py --reset
+```
 
----
+![Reindexing in action](imgs/reindex.gif)
 
-## 🧠 Project Philosophy
 
-This tool was built for developers who trust their brains but not the cloud.  
-Rummage through chaos, securely and locally.
+### Chat about them
+```bash
+poetry run python scripts/chat.py
+```
+![Ask about Taylor Swift](imgs/correct-answer.gif)
